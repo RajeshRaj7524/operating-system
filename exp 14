@@ -1,0 +1,160 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_FILES 10
+#define FILENAME_LENGTH 50
+
+// A structure to represent a single-level directory
+typedef struct {
+    char files[MAX_FILES][FILENAME_LENGTH];  // List of file names
+    int file_count;  // Number of files in the directory
+} Directory;
+
+// Initialize the directory (no files initially)
+void initialize_directory(Directory *dir) {
+    dir->file_count = 0;
+}
+
+// Create a new file in the directory
+void create_file(Directory *dir, const char *filename) {
+    if (dir->file_count >= MAX_FILES) {
+        printf("Directory is full, cannot create more files.\n");
+        return;
+    }
+    // Check if file already exists
+    for (int i = 0; i < dir->file_count; i++) {
+        if (strcmp(dir->files[i], filename) == 0) {
+            printf("Error: File '%s' already exists.\n", filename);
+            return;
+        }
+    }
+    // Add the new file
+    strcpy(dir->files[dir->file_count], filename);
+    dir->file_count++;
+    printf("File '%s' created successfully.\n", filename);
+}
+
+// List all files in the directory
+void list_files(Directory *dir) {
+    if (dir->file_count == 0) {
+        printf("No files in the directory.\n");
+        return;
+    }
+    printf("Files in the directory:\n");
+    for (int i = 0; i < dir->file_count; i++) {
+        printf("%d. %s\n", i + 1, dir->files[i]);
+    }
+}
+
+// Delete a file from the directory
+void delete_file(Directory *dir, const char *filename) {
+    int i, found = 0;
+
+    // Find the file to delete
+    for (i = 0; i < dir->file_count; i++) {
+        if (strcmp(dir->files[i], filename) == 0) {
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found) {
+        printf("File '%s' not found.\n", filename);
+        return;
+    }
+
+    // Shift the remaining files to remove the deleted file
+    for (int j = i; j < dir->file_count - 1; j++) {
+        strcpy(dir->files[j], dir->files[j + 1]);
+    }
+    dir->file_count--;
+    printf("File '%s' deleted successfully.\n", filename);
+}
+
+// Rename a file in the directory
+void rename_file(Directory *dir, const char *old_filename, const char *new_filename) {
+    int found = 0;
+
+    // Check if the new filename already exists
+    for (int i = 0; i < dir->file_count; i++) {
+        if (strcmp(dir->files[i], new_filename) == 0) {
+            printf("Error: File '%s' already exists.\n", new_filename);
+            return;
+        }
+    }
+
+    // Find the file to rename
+    for (int i = 0; i < dir->file_count; i++) {
+        if (strcmp(dir->files[i], old_filename) == 0) {
+            found = 1;
+            strcpy(dir->files[i], new_filename);
+            printf("File '%s' renamed to '%s'.\n", old_filename, new_filename);
+            return;
+        }
+    }
+
+    if (!found) {
+        printf("File '%s' not found.\n", old_filename);
+    }
+}
+
+// Main function to interact with the user
+int main() {
+    Directory dir;
+    initialize_directory(&dir);
+
+    int choice;
+    char filename[FILENAME_LENGTH], new_filename[FILENAME_LENGTH];
+
+    while (1) {
+        printf("\n=== Single-Level Directory System ===\n");
+        printf("1. Create a file\n");
+        printf("2. List files\n");
+        printf("3. Delete a file\n");
+        printf("4. Rename a file\n");
+        printf("5. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+        getchar();  // To consume the newline character left by scanf
+
+        switch (choice) {
+            case 1:
+                printf("Enter file name to create: ");
+                fgets(filename, FILENAME_LENGTH, stdin);
+                filename[strcspn(filename, "\n")] = '\0';  // Remove trailing newline
+                create_file(&dir, filename);
+                break;
+
+            case 2:
+                list_files(&dir);
+                break;
+
+            case 3:
+                printf("Enter file name to delete: ");
+                fgets(filename, FILENAME_LENGTH, stdin);
+                filename[strcspn(filename, "\n")] = '\0';  // Remove trailing newline
+                delete_file(&dir, filename);
+                break;
+
+            case 4:
+                printf("Enter old file name to rename: ");
+                fgets(filename, FILENAME_LENGTH, stdin);
+                filename[strcspn(filename, "\n")] = '\0';  // Remove trailing newline
+                printf("Enter new file name: ");
+                fgets(new_filename, FILENAME_LENGTH, stdin);
+                new_filename[strcspn(new_filename, "\n")] = '\0';  // Remove trailing newline
+                rename_file(&dir, filename, new_filename);
+                break;
+
+            case 5:
+                printf("Exiting the directory system.\n");
+                exit(0);
+
+            default:
+                printf("Invalid choice! Please try again.\n");
+        }
+    }
+
+    return 0;
+}
