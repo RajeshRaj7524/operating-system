@@ -1,0 +1,81 @@
+#include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <errno.h>
+
+#define FILE_NAME "sample.txt"
+
+void demonstrateUnixFileManagement() {
+    int fd;
+    char buffer[100];
+    ssize_t bytesRead, bytesWritten;
+
+    // 1. Open a file (using open system call)
+    fd = open(FILE_NAME, O_CREAT | O_RDWR, 0644);  // Create file if it doesn't exist, read and write permissions
+    if (fd == -1) {
+        perror("Error opening file");
+        return;
+    }
+    printf("File '%s' opened successfully with file descriptor %d\n", FILE_NAME, fd);
+
+    // 2. Write to the file (using write system call)
+    char *data = "Hello, UNIX system calls for file management!";
+    bytesWritten = write(fd, data, strlen(data));
+    if (bytesWritten == -1) {
+        perror("Error writing to file");
+        close(fd);
+        return;
+    }
+    printf("Successfully written %zd bytes to the file.\n", bytesWritten);
+
+    // 3. Close the file (using close system call)
+    if (close(fd) == -1) {
+        perror("Error closing the file");
+        return;
+    }
+    printf("File '%s' closed successfully.\n", FILE_NAME);
+
+    // 4. Reopen the file (using open system call)
+    fd = open(FILE_NAME, O_RDONLY);  // Open the file in read-only mode
+    if (fd == -1) {
+        perror("Error reopening file");
+        return;
+    }
+    printf("File '%s' reopened successfully in read-only mode.\n", FILE_NAME);
+
+    // 5. Read from the file (using read system call)
+    bytesRead = read(fd, buffer, sizeof(buffer) - 1);  // Leave space for the null-terminator
+    if (bytesRead == -1) {
+        perror("Error reading from file");
+        close(fd);
+        return;
+    }
+    buffer[bytesRead] = '\0';  // Null-terminate the string
+    printf("Successfully read %zd bytes from the file: %s\n", bytesRead, buffer);
+
+    // 6. Get file status (using fstat system call)
+    struct stat fileStat;
+    if (fstat(fd, &fileStat) == -1) {
+        perror("Error getting file status");
+        close(fd);
+        return;
+    }
+    printf("File status:\n");
+    printf("File size: %ld bytes\n", fileStat.st_size);
+    printf("Permissions: %o\n", fileStat.st_mode & 0777);
+
+    // 7. Close the file again (using close system call)
+    if (close(fd) == -1) {
+        perror("Error closing the file again");
+        return;
+    }
+    printf("File '%s' closed successfully again.\n", FILE_NAME);
+}
+
+int main() {
+    // Call the function to demonstrate file management system calls
+    demonstrateUnixFileManagement();
+    return 0;
+}
