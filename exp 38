@@ -1,0 +1,110 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Function to compare integers (for sorting)
+int compare(const void *a, const void *b) {
+    return (*(int*)a - *(int*)b);
+}
+
+void scanDiskScheduling(int requests[], int numRequests, int initialPosition, int maxTrack, char direction) {
+    // Sort the requests
+    qsort(requests, numRequests, sizeof(int), compare);
+
+    int totalMovement = 0;
+    int currentPosition = initialPosition;
+
+    printf("Disk Scheduling (SCAN) Order:\n");
+
+    // If direction is 'R' (Right), service requests towards the right first
+    if (direction == 'R') {
+        // Process all requests to the right
+        for (int i = 0; i < numRequests; i++) {
+            if (requests[i] >= currentPosition) {
+                int movement = abs(currentPosition - requests[i]);
+                totalMovement += movement;
+                printf("Move from track %d to track %d. Movement = %d\n", currentPosition, requests[i], movement);
+                currentPosition = requests[i];
+            }
+        }
+
+        // Move to the end (maxTrack) if necessary
+        if (currentPosition != maxTrack) {
+            int movement = abs(currentPosition - maxTrack);
+            totalMovement += movement;
+            printf("Move from track %d to track %d (end). Movement = %d\n", currentPosition, maxTrack, movement);
+            currentPosition = maxTrack;
+        }
+
+        // Process all requests to the left (in reverse direction)
+        for (int i = numRequests - 1; i >= 0; i--) {
+            if (requests[i] < currentPosition) {
+                int movement = abs(currentPosition - requests[i]);
+                totalMovement += movement;
+                printf("Move from track %d to track %d. Movement = %d\n", currentPosition, requests[i], movement);
+                currentPosition = requests[i];
+            }
+        }
+    } 
+    // If direction is 'L' (Left), service requests towards the left first
+    else if (direction == 'L') {
+        // Process all requests to the left
+        for (int i = numRequests - 1; i >= 0; i--) {
+            if (requests[i] <= currentPosition) {
+                int movement = abs(currentPosition - requests[i]);
+                totalMovement += movement;
+                printf("Move from track %d to track %d. Movement = %d\n", currentPosition, requests[i], movement);
+                currentPosition = requests[i];
+            }
+        }
+
+        // Move to the beginning (0) if necessary
+        if (currentPosition != 0) {
+            int movement = abs(currentPosition - 0);
+            totalMovement += movement;
+            printf("Move from track %d to track %d (start). Movement = %d\n", currentPosition, 0, movement);
+            currentPosition = 0;
+        }
+
+        // Process all requests to the right (in reverse direction)
+        for (int i = 0; i < numRequests; i++) {
+            if (requests[i] > currentPosition) {
+                int movement = abs(currentPosition - requests[i]);
+                totalMovement += movement;
+                printf("Move from track %d to track %d. Movement = %d\n", currentPosition, requests[i], movement);
+                currentPosition = requests[i];
+            }
+        }
+    }
+
+    printf("\nTotal movement of the disk arm = %d tracks\n", totalMovement);
+}
+
+int main() {
+    int numRequests, initialPosition, maxTrack;
+    char direction;
+
+    // Input the number of disk requests and the initial position of the disk arm
+    printf("Enter the number of disk requests: ");
+    scanf("%d", &numRequests);
+
+    int requests[numRequests];
+
+    printf("Enter the disk requests (track numbers):\n");
+    for (int i = 0; i < numRequests; i++) {
+        scanf("%d", &requests[i]);
+    }
+
+    printf("Enter the initial position of the disk arm: ");
+    scanf("%d", &initialPosition);
+
+    printf("Enter the maximum track number: ");
+    scanf("%d", &maxTrack);
+
+    printf("Enter the direction of movement (L for Left, R for Right): ");
+    scanf(" %c", &direction);
+
+    // Simulate SCAN disk scheduling
+    scanDiskScheduling(requests, numRequests, initialPosition, maxTrack, direction);
+
+    return 0;
+}
