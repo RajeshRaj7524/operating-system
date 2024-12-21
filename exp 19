@@ -1,0 +1,72 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+// Shared resource
+int counter = 0;
+
+// Mutex lock for synchronization
+pthread_mutex_t lock;
+
+// Producer thread function
+void* producer(void* arg) {
+    for (int i = 0; i < 10; i++) {
+        // Locking the mutex to ensure exclusive access to the critical section
+        pthread_mutex_lock(&lock);
+
+        // Critical section: Increment the counter
+        counter++;
+        printf("Producer incremented counter: %d\n", counter);
+
+        // Unlocking the mutex after accessing the shared resource
+        pthread_mutex_unlock(&lock);
+
+        // Simulate some work
+        sleep(1);
+    }
+    return NULL;
+}
+
+// Consumer thread function
+void* consumer(void* arg) {
+    for (int i = 0; i < 10; i++) {
+        // Locking the mutex to ensure exclusive access to the critical section
+        pthread_mutex_lock(&lock);
+
+        // Critical section: Decrement the counter
+        counter--;
+        printf("Consumer decremented counter: %d\n", counter);
+
+        // Unlocking the mutex after accessing the shared resource
+        pthread_mutex_unlock(&lock);
+
+        // Simulate some work
+        sleep(1);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t prod_thread, cons_thread;
+
+    // Initialize the mutex lock
+    if (pthread_mutex_init(&lock, NULL) != 0) {
+        printf("Mutex initialization failed\n");
+        return 1;
+    }
+
+    // Create producer and consumer threads
+    pthread_create(&prod_thread, NULL, producer, NULL);
+    pthread_create(&cons_thread, NULL, consumer, NULL);
+
+    // Wait for both threads to finish
+    pthread_join(prod_thread, NULL);
+    pthread_join(cons_thread, NULL);
+
+    // Destroy the mutex lock
+    pthread_mutex_destroy(&lock);
+
+    printf("Final counter value: %d\n", counter);
+
+    return 0;
+}
