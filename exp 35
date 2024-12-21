@@ -1,0 +1,80 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_BLOCKS 10       // Maximum number of blocks in the file
+#define BLOCK_SIZE 100      // Size of each block
+#define MAX_INDEX_BLOCKS 10 // Maximum number of entries in the index block
+
+// Define the structure for a data block
+typedef struct {
+    char data[BLOCK_SIZE]; // Data stored in the block
+} DataBlock;
+
+// Define the structure for an index block
+typedef struct {
+    int blockID; // The block ID that points to the corresponding data block
+} IndexBlock;
+
+// Function to simulate the file system with indexed allocation
+void simulateIndexedAllocation(DataBlock file[], IndexBlock index[], int numBlocks, int numIndexBlocks) {
+    printf("\n--- Simulating Indexed File Allocation ---\n");
+
+    // Simulate accessing data blocks through the index block
+    for (int i = 0; i < numBlocks; i++) {
+        int blockID = index[i].blockID; // Get the actual block ID from the index
+        if (blockID >= 0 && blockID < numBlocks) {
+            printf("Accessing Block %d: %s\n", blockID, file[blockID].data);
+        } else {
+            printf("Error: Block ID %d is invalid.\n", blockID);
+        }
+    }
+}
+
+// Function to create and initialize the file with data
+void createFile(DataBlock file[], int numBlocks) {
+    for (int i = 0; i < numBlocks; i++) {
+        file[i].blockID = i; // Assign a block ID
+        snprintf(file[i].data, sizeof(file[i].data), "This is the data of block %d", i); // Assign sample data
+    }
+}
+
+// Function to create and initialize the index block with pointers to data blocks
+void createIndexBlock(IndexBlock index[], int numBlocks) {
+    for (int i = 0; i < numBlocks; i++) {
+        index[i].blockID = i; // Point to the corresponding data block
+    }
+}
+
+int main() {
+    DataBlock file[MAX_BLOCKS];    // Array to represent the file's data blocks
+    IndexBlock index[MAX_INDEX_BLOCKS]; // Array to represent the index block
+    int numBlocks, numIndexBlocks;
+
+    // Get the number of blocks in the file and index block entries from the user
+    printf("Enter the number of blocks in the file (1 to %d): ", MAX_BLOCKS);
+    scanf("%d", &numBlocks);
+
+    if (numBlocks < 1 || numBlocks > MAX_BLOCKS) {
+        printf("Invalid number of blocks. Please enter a number between 1 and %d.\n", MAX_BLOCKS);
+        return 1;
+    }
+
+    // Get the number of index block entries
+    printf("Enter the number of entries in the index block (1 to %d): ", numBlocks);
+    scanf("%d", &numIndexBlocks);
+
+    if (numIndexBlocks < 1 || numIndexBlocks > numBlocks) {
+        printf("Invalid number of index block entries. Please enter a value between 1 and %d.\n", numBlocks);
+        return 1;
+    }
+
+    // Initialize the file and index block
+    createFile(file, numBlocks);
+    createIndexBlock(index, numIndexBlocks);
+
+    // Simulate accessing the file with indexed allocation
+    simulateIndexedAllocation(file, index, numBlocks, numIndexBlocks);
+
+    return 0;
+}
