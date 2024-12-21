@@ -1,0 +1,187 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_NAME_LEN 100
+#define FILENAME "employee.dat"
+
+// Structure to store employee details
+typedef struct {
+    int empID;
+    char name[MAX_NAME_LEN];
+    int age;
+    char department[MAX_NAME_LEN];
+} Employee;
+
+// Function to add a new employee to the file
+void addEmployee(FILE *file) {
+    Employee emp;
+    fseek(file, 0, SEEK_END); // Move to the end of the file
+
+    printf("Enter Employee ID: ");
+    scanf("%d", &emp.empID);
+    getchar(); // Consume the newline character left by scanf
+
+    printf("Enter Employee Name: ");
+    fgets(emp.name, MAX_NAME_LEN, stdin);
+    emp.name[strcspn(emp.name, "\n")] = '\0'; // Remove newline character from name
+
+    printf("Enter Employee Age: ");
+    scanf("%d", &emp.age);
+    getchar(); // Consume the newline character left by scanf
+
+    printf("Enter Employee Department: ");
+    fgets(emp.department, MAX_NAME_LEN, stdin);
+    emp.department[strcspn(emp.department, "\n")] = '\0'; // Remove newline character from department
+
+    fwrite(&emp, sizeof(Employee), 1, file);
+    printf("Employee added successfully!\n");
+}
+
+// Function to display an employee's details based on empID
+void displayEmployee(FILE *file, int empID) {
+    Employee emp;
+    int found = 0;
+
+    fseek(file, 0, SEEK_SET); // Start reading from the beginning of the file
+    while (fread(&emp, sizeof(Employee), 1, file)) {
+        if (emp.empID == empID) {
+            printf("Employee ID: %d\n", emp.empID);
+            printf("Name: %s\n", emp.name);
+            printf("Age: %d\n", emp.age);
+            printf("Department: %s\n", emp.department);
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found) {
+        printf("Employee with ID %d not found.\n", empID);
+    }
+}
+
+// Function to modify an employee's details
+void modifyEmployee(FILE *file, int empID) {
+    Employee emp;
+    int found = 0;
+    long pos;
+
+    fseek(file, 0, SEEK_SET); // Start reading from the beginning of the file
+    while (fread(&emp, sizeof(Employee), 1, file)) {
+        pos = ftell(file) - sizeof(Employee); // Get the position of the current employee
+
+        if (emp.empID == empID) {
+            printf("Enter new name: ");
+            getchar(); // Consume the newline character left by scanf
+            fgets(emp.name, MAX_NAME_LEN, stdin);
+            emp.name[strcspn(emp.name, "\n")] = '\0'; // Remove newline character
+
+            printf("Enter new age: ");
+            scanf("%d", &emp.age);
+
+            printf("Enter new department: ");
+            getchar(); // Consume the newline character
+            fgets(emp.department, MAX_NAME_LEN, stdin);
+            emp.department[strcspn(emp.department, "\n")] = '\0'; // Remove newline character
+
+            fseek(file, pos, SEEK_SET); // Move to the position of the employee
+            fwrite(&emp, sizeof(Employee), 1, file); // Update employee details
+            printf("Employee details updated successfully!\n");
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found) {
+        printf("Employee with ID %d not found.\n", empID);
+    }
+}
+
+// Function to delete an employee by ID (Overwrite the employee's record with the last record in the file)
+void deleteEmployee(FILE *file, int empID) {
+    FILE *tempFile;
+    Employee emp;
+    int found = 0;
+
+    // Create a temporary file
+    tempFile = fopen("temp.dat", "wb");
+    if (tempFile == NULL) {
+        printf("Error opening temporary file.\n");
+        return;
+    }
+
+    fseek(file, 0, SEEK_SET); // Start from the beginning of the file
+    while (fread(&emp, sizeof(Employee), 1, file)) {
+        if (emp.empID == empID) {
+            found = 1;
+            continue; // Skip writing this employee to the temporary file
+        }
+        fwrite(&emp, sizeof(Employee), 1, tempFile);
+    }
+
+    if (found) {
+        printf("Employee deleted successfully!\n");
+        fclose(file);
+        fclose(tempFile);
+        remove(FILENAME); // Remove the original file
+        rename("temp.dat", FILENAME); // Rename the temporary file to the original file name
+    } else {
+        printf("Employee with ID %d not found.\n", empID);
+    }
+}
+
+// Main function to drive the program
+int main() {
+    FILE *file;
+    int choice, empID;
+
+    // Open the employee file in both read and write mode, creating it if it doesn't exist
+    file = fopen(FILENAME, "rb+");
+    if (file == NULL) {
+        file = fopen(FILENAME, "wb+"); // Create file if it doesn't exist
+        if (file == NULL) {
+            printf("Error opening file.\n");
+            return 1;
+        }
+    }
+
+    while (1) {
+        printf("\nEmployee Management System\n");
+        printf("1. Add Employee\n");
+        printf("2. Display Employee\n");
+        printf("3. Modify Employee\n");
+        printf("4. Delete Employee\n");
+        printf("5. Exit\n");
+        printf("Enter your choice: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                addEmployee(file);
+                break;
+            case 2:
+                printf("Enter Employee ID to display: ");
+                scanf("%d", &empID);
+                displayEmployee(file, empID);
+                break;
+            case 3:
+                printf("Enter Employee ID to modify: ");
+                scanf("%d", &empID);
+                modifyEmployee(file, empID);
+                break;
+            case 4:
+                printf("Enter Employee ID to delete: ");
+                scanf("%d", &empID);
+                deleteEmployee(file, empID);
+                break;
+            case 5:
+                fclose(file);
+                printf("Exiting program.\n");
+                return 0;
+            default:
+                printf("Invalid choice. Try again.\n");
+        }
+    }
+
+    return 0;
+}
