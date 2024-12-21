@@ -1,0 +1,120 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Define the maximum number of blocks
+#define MAX_BLOCKS 10
+#define BLOCK_SIZE 100
+
+// Define the structure for a file block
+typedef struct Block {
+    char data[BLOCK_SIZE];    // Data stored in the block
+    struct Block* next;       // Pointer to the next block
+} Block;
+
+// Define the structure for a file's directory entry
+typedef struct File {
+    Block* firstBlock;        // Pointer to the first block of the file
+    Block* lastBlock;         // Pointer to the last block of the file
+} File;
+
+// Function to create a new block
+Block* createBlock(const char* data) {
+    Block* newBlock = (Block*)malloc(sizeof(Block));
+    if (newBlock == NULL) {
+        printf("Error: Memory allocation failed for new block.\n");
+        exit(1);
+    }
+    strncpy(newBlock->data, data, BLOCK_SIZE); // Copy data into the block
+    newBlock->next = NULL; // Initialize the next pointer to NULL
+    return newBlock;
+}
+
+// Function to create a file with a linked list of blocks
+void createFile(File* file, const char* data[], int numBlocks) {
+    if (numBlocks <= 0) {
+        printf("Error: Number of blocks must be greater than 0.\n");
+        return;
+    }
+
+    // Create the first block
+    file->firstBlock = createBlock(data[0]);
+    Block* currentBlock = file->firstBlock;
+
+    // Create the remaining blocks and link them
+    for (int i = 1; i < numBlocks; i++) {
+        Block* newBlock = createBlock(data[i]);
+        currentBlock->next = newBlock;  // Link the blocks
+        currentBlock = newBlock;        // Move to the new block
+    }
+
+    // The last block's next pointer is already NULL by default
+    file->lastBlock = currentBlock;   // Set the last block
+}
+
+// Function to read a specific block from the file
+void readBlock(File* file, int blockNumber) {
+    if (blockNumber < 1) {
+        printf("Error: Block number must be greater than or equal to 1.\n");
+        return;
+    }
+
+    Block* currentBlock = file->firstBlock;
+    int currentBlockNumber = 1;
+
+    // Traverse the linked list to find the specified block
+    while (currentBlock != NULL && currentBlockNumber < blockNumber) {
+        currentBlock = currentBlock->next;
+        currentBlockNumber++;
+    }
+
+    if (currentBlock == NULL) {
+        printf("Error: Block number %d does not exist in the file.\n", blockNumber);
+    } else {
+        printf("Block %d: %s\n", blockNumber, currentBlock->data);
+    }
+}
+
+// Function to display the entire file by traversing the linked list of blocks
+void displayFile(File* file) {
+    if (file->firstBlock == NULL) {
+        printf("Error: File is empty.\n");
+        return;
+    }
+
+    Block* currentBlock = file->firstBlock;
+    int blockNumber = 1;
+    
+    // Traverse the linked list and print the contents of each block
+    while (currentBlock != NULL) {
+        printf("Block %d: %s\n", blockNumber, currentBlock->data);
+        currentBlock = currentBlock->next;
+        blockNumber++;
+    }
+}
+
+int main() {
+    File file;
+    const char* fileData[] = {
+        "This is block 1 of the file.",
+        "This is block 2 of the file.",
+        "This is block 3 of the file.",
+        "This is block 4 of the file."
+    };
+    int numBlocks = 4;  // Number of blocks in the file
+
+    // Create the file with the given data
+    createFile(&file, fileData, numBlocks);
+
+    // Display the entire file
+    printf("Displaying the entire file:\n");
+    displayFile(&file);
+
+    // Read a specific block
+    int blockToRead;
+    printf("\nEnter the block number to read: ");
+    scanf("%d", &blockToRead);
+    readBlock(&file, blockToRead);
+
+    return 0;
+}
