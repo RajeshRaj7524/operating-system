@@ -1,0 +1,49 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+void fcfsDiskScheduling(int requests[], int numRequests, int initialPosition) {
+    int totalMovement = 0;
+    int currentPosition = initialPosition;
+
+    printf("Disk Scheduling (FCFS) Order:\n");
+
+    // Process each request in the order they arrive
+    for (int i = 0; i < numRequests; i++) {
+        int requestedTrack = requests[i];
+        
+        // Calculate the movement for this request
+        int movement = abs(currentPosition - requestedTrack);
+        totalMovement += movement;
+
+        // Print the current request and the movement
+        printf("Move from track %d to track %d. Movement = %d\n", currentPosition, requestedTrack, movement);
+
+        // Update the current position of the disk arm
+        currentPosition = requestedTrack;
+    }
+
+    printf("\nTotal movement of the disk arm = %d tracks\n", totalMovement);
+}
+
+int main() {
+    int numRequests, initialPosition;
+
+    // Input the number of requests and the initial position of the disk arm
+    printf("Enter the number of disk requests: ");
+    scanf("%d", &numRequests);
+
+    int requests[numRequests];
+
+    printf("Enter the disk requests (track numbers):\n");
+    for (int i = 0; i < numRequests; i++) {
+        scanf("%d", &requests[i]);
+    }
+
+    printf("Enter the initial position of the disk arm: ");
+    scanf("%d", &initialPosition);
+
+    // Simulate FCFS disk scheduling
+    fcfsDiskScheduling(requests, numRequests, initialPosition);
+
+    return 0;
+}
