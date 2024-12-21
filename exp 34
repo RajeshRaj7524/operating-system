@@ -1,0 +1,54 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+// Define the maximum size for a record and the total number of records
+#define MAX_RECORD_SIZE 100
+#define MAX_RECORDS 10
+
+// Define the structure for a record
+typedef struct {
+    int recordID;
+    char data[MAX_RECORD_SIZE];
+} Record;
+
+// Function to simulate reading a record in sequential file allocation
+void readRecordSequentially(Record file[], int numRecords, int recordID) {
+    if (recordID <= 0 || recordID > numRecords) {
+        printf("Error: Invalid record ID. Please enter a valid record number between 1 and %d.\n", numRecords);
+        return;
+    }
+
+    printf("Reading record %d sequentially:\n", recordID);
+    
+    // Sequential read: read all previous records and the desired record
+    for (int i = 0; i < recordID; i++) {
+        printf("Record %d: %s\n", file[i].recordID, file[i].data);
+    }
+}
+
+// Function to create a sample file with records
+void createSampleFile(Record file[], int *numRecords) {
+    for (int i = 0; i < MAX_RECORDS; i++) {
+        file[i].recordID = i + 1;  // Record IDs are 1-based
+        snprintf(file[i].data, sizeof(file[i].data), "This is the data of record %d", i + 1);
+    }
+    *numRecords = MAX_RECORDS;
+}
+
+int main() {
+    Record file[MAX_RECORDS];  // Array to represent the file
+    int numRecords = 0;
+
+    // Create a sample file with records
+    createSampleFile(file, &numRecords);
+
+    printf("Enter the record number to read (1 to %d): ", numRecords);
+    int recordID;
+    scanf("%d", &recordID);
+
+    // Simulate sequential reading of a record
+    readRecordSequentially(file, numRecords, recordID);
+
+    return 0;
+}
