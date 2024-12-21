@@ -1,0 +1,97 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <semaphore.h>
+
+#define MAX_BUFFER_SIZE 5  // Maximum number of items in the buffer
+
+// Shared buffer and variables
+int buffer[MAX_BUFFER_SIZE];
+int in = 0;  // Points to the next empty slot
+int out = 0; // Points to the next item to consume
+
+// Semaphores
+sem_t mutex;  // To protect critical section (buffer access)
+sem_t empty;   // To count the empty slots in the buffer
+sem_t full;    // To count the full slots in the buffer
+
+// Producer thread function
+void* producer(void* arg) {
+    int item;
+    while (1) {
+        // Produce an item (random number between 1 and 100)
+        item = rand() % 100 + 1;
+        
+        // Wait for an empty slot
+        sem_wait(&empty);
+        
+        // Enter critical section (mutex to access buffer)
+        sem_wait(&mutex);
+        
+        // Add item to buffer
+        buffer[in] = item;
+        printf("Produced: %d at buffer[%d]\n", item, in);
+        in = (in + 1) % MAX_BUFFER_SIZE;
+        
+        // Exit critical section
+        sem_post(&mutex);
+        
+        // Signal that there is a new item in the buffer
+        sem_post(&full);
+        
+        // Sleep to simulate time taken to produce
+        sleep(1);
+    }
+    return NULL;
+}
+
+// Consumer thread function
+void* consumer(void* arg) {
+    int item;
+    while (1) {
+        // Wait for an item to be available
+        sem_wait(&full);
+        
+        // Enter critical section (mutex to access buffer)
+        sem_wait(&mutex);
+        
+        // Consume an item from buffer
+        item = buffer[out];
+        printf("Consumed: %d from buffer[%d]\n", item, out);
+        out = (out + 1) % MAX_BUFFER_SIZE;
+        
+        // Exit critical section
+        sem_post(&mutex);
+        
+        // Signal that there is one more empty slot in the buffer
+        sem_post(&empty);
+        
+        // Sleep to simulate time taken to consume
+        sleep(1);
+    }
+    return NULL;
+}
+
+int main() {
+    pthread_t prod_thread, cons_thread;
+
+    // Initialize semaphores
+    sem_init(&mutex, 0, 1);   // Mutex to protect critical section (binary semaphore)
+    sem_init(&empty, 0, MAX_BUFFER_SIZE);  // Counting semaphore, initially all slots are empty
+    sem_init(&full, 0, 0);     // Counting semaphore, initially no items in the buffer
+
+    // Create producer and consumer threads
+    pthread_create(&prod_thread, NULL, producer, NULL);
+    pthread_create(&cons_thread, NULL, consumer, NULL);
+
+    // Wait for the threads to complete (they will run indefinitely in this example)
+    pthread_join(prod_thread, NULL);
+    pthread_join(cons_thread, NULL);
+
+    // Destroy semaphores
+    sem_destroy(&mutex);
+    sem_destroy(&empty);
+    sem_destroy(&full);
+
+    return 0;
+}
