@@ -1,0 +1,81 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+int main() {
+    char filename[] = "testfile.txt";
+    FILE *file;
+    struct stat file_stat;
+
+    // Create a new file (this will automatically assign rw-r--r-- permissions)
+    file = fopen(filename, "w");
+    if (file == NULL) {
+        perror("Error creating file");
+        return 1;
+    }
+    fprintf(file, "This is a test file for demonstrating Linux file permissions and users.\n");
+    fclose(file);
+    printf("File '%s' created successfully.\n", filename);
+
+    // Get the file's current permissions
+    if (stat(filename, &file_stat) == -1) {
+        perror("Error fetching file information");
+        return 1;
+    }
+
+    printf("\nCurrent permissions of '%s':\n", filename);
+    printf("Owner permissions: %o\n", file_stat.st_mode & 0777); // Display permissions in octal
+
+    // Simulating chmod to change file permissions
+    // Let's change file permissions to rwxr-xr-- (755)
+    if (chmod(filename, S_IRWXU | S_IRGRP | S_IROTH) == -1) {
+        perror("Error changing file permissions");
+        return 1;
+    }
+
+    printf("\nPermissions changed to 'rwxr-xr--'.\n");
+
+    // Get the updated file permissions
+    if (stat(filename, &file_stat) == -1) {
+        perror("Error fetching updated file information");
+        return 1;
+    }
+
+    printf("\nUpdated permissions of '%s':\n", filename);
+    printf("Owner permissions: %o\n", file_stat.st_mode & 0777);
+
+    // Simulate different users accessing the file
+    printf("\nSimulating file access by different users:\n");
+
+    // Simulate Owner (User) access: Attempt to read/write/execute
+    if (access(filename, F_OK) == 0) {
+        printf("Owner (User) has access to '%s'.\n", filename);
+    } else {
+        printf("Owner (User) does not have access to '%s'.\n", filename);
+    }
+
+    // Simulate Group access: Check if the user belongs to the group (assuming group permission allows read/execute)
+    if (access(filename, R_OK) == 0) {
+        printf("Group has read access to '%s'.\n", filename);
+    } else {
+        printf("Group does not have read access to '%s'.\n", filename);
+    }
+
+    // Simulate Other Users: Check if other users can read (based on permissions)
+    if (access(filename, R_OK) == 0) {
+        printf("Others have read access to '%s'.\n", filename);
+    } else {
+        printf("Others do not have read access to '%s'.\n", filename);
+    }
+
+    // Clean up: Remove the file
+    if (remove(filename) == 0) {
+        printf("\nFile '%s' deleted successfully.\n", filename);
+    } else {
+        perror("Error deleting file");
+    }
+
+    return 0;
+}
