@@ -1,0 +1,172 @@
+#include <stdio.h>
+#include <stdbool.h>
+
+#define P 5 // Number of processes
+#define R 3 // Number of resources
+
+// Function to find if the system is in a safe state
+bool isSafe(int processes[], int avail[], int max[][R], int allot[][R], int need[][R]) {
+    int work[R];
+    bool finish[P] = {false};
+    int safeSeq[P];
+    int count = 0;
+
+    // Initialize work[] to be equal to available resources
+    for (int i = 0; i < R; i++) {
+        work[i] = avail[i];
+    }
+
+    while (count < P) {
+        bool found = false;
+        for (int p = 0; p < P; p++) {
+            // Check if the process is not finished and if the process's needs can be met by work
+            if (!finish[p]) {
+                bool canProceed = true;
+                for (int r = 0; r < R; r++) {
+                    if (need[p][r] > work[r]) {
+                        canProceed = false;
+                        break;
+                    }
+                }
+
+                if (canProceed) {
+                    // Add allocation to work[] (simulating the process completion)
+                    for (int r = 0; r < R; r++) {
+                        work[r] += allot[p][r];
+                    }
+                    safeSeq[count++] = p;
+                    finish[p] = true;
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        // If no process could proceed, then the system is in an unsafe state
+        if (!found) {
+            return false;
+        }
+    }
+
+    printf("System is in a safe state.\nSafe sequence is: ");
+    for (int i = 0; i < P; i++) {
+        printf("%d ", safeSeq[i]);
+    }
+    printf("\n");
+    return true;
+}
+
+// Function to request resources from the system
+bool requestResources(int pid, int req[], int avail[], int max[][R], int allot[][R], int need[][R]) {
+    // Check if request is less than or equal to need
+    for (int i = 0; i < R; i++) {
+        if (req[i] > need[pid][i]) {
+            printf("Error: Process has exceeded its maximum claim\n");
+            return false;
+        }
+    }
+
+    // Check if request is less than or equal to available
+    for (int i = 0; i < R; i++) {
+        if (req[i] > avail[i]) {
+            printf("Resources not available, process must wait\n");
+            return false;
+        }
+    }
+
+    // Pretend to allocate resources to the process
+    for (int i = 0; i < R; i++) {
+        avail[i] -= req[i];
+        allot[pid][i] += req[i];
+        need[pid][i] -= req[i];
+    }
+
+    // Check if the system is in a safe state after allocation
+    if (isSafe(pid, avail, max, allot, need)) {
+        printf("Request granted to process %d\n", pid);
+        return true;
+    } else {
+        // Rollback the allocation if the state is unsafe
+        for (int i = 0; i < R; i++) {
+            avail[i] += req[i];
+            allot[pid][i] -= req[i];
+            need[pid][i] += req[i];
+        }
+        printf("Request denied to process %d as it leads to an unsafe state\n", pid);
+        return false;
+    }
+}
+
+int main() {
+    int processes[P] = {0, 1, 2, 3, 4};
+
+    // Available resources
+    int avail[] = {3, 3, 2};
+
+    // Maximum resources required by each process
+    int max[][R] = {
+        {7, 5, 3},
+        {3, 2, 2},
+        {9, 0, 2},
+        {2, 2, 2},
+        {4, 3, 3}
+    };
+
+    // Allocated resources for each process
+    int allot[][R] = {
+        {0, 1, 0},
+        {2, 0, 0},
+        {3, 0, 2},
+        {2, 1, 1},
+        {0, 0, 2}
+    };
+
+    // Calculate need matrix (Max - Allocation)
+    int need[P][R];
+    for (int i = 0; i < P; i++) {
+        for (int j = 0; j < R; j++) {
+            need[i][j] = max[i][j] - allot[i][j];
+        }
+    }
+
+    // Display initial system state
+    printf("Available resources: ");
+    for (int i = 0; i < R; i++) {
+        printf("%d ", avail[i]);
+    }
+    printf("\n");
+
+    printf("Maximum resources:\n");
+    for (int i = 0; i < P; i++) {
+        printf("P%d: ", i);
+        for (int j = 0; j < R; j++) {
+            printf("%d ", max[i][j]);
+        }
+        printf("\n");
+    }
+
+    printf("Allocated resources:\n");
+    for (int i = 0; i < P; i++) {
+        printf("P%d: ", i);
+        for (int j = 0; j < R; j++) {
+            printf("%d ", allot[i][j]);
+        }
+        printf("\n");
+    }
+
+    printf("Need matrix:\n");
+    for (int i = 0; i < P; i++) {
+        printf("P%d: ", i);
+        for (int j = 0; j < R; j++) {
+            printf("%d ", need[i][j]);
+        }
+        printf("\n");
+    }
+
+    // Request resources for process 1
+    int request[] = {1, 0, 2};
+    int pid = 1;
+    requestResources(pid, request, avail, max, allot, need);
+
+    return 0;
+}
