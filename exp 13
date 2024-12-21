@@ -1,0 +1,146 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#define MEMORY_POOL_SIZE 100  // Size of the memory pool
+
+typedef struct Block {
+    int size;
+    bool is_free;
+    struct Block *next;
+} Block;
+
+Block memory_pool[MEMORY_POOL_SIZE];  // Simulated memory pool
+
+// Initialize the memory pool
+void initialize_memory_pool() {
+    for (int i = 0; i < MEMORY_POOL_SIZE; i++) {
+        memory_pool[i].size = 0;
+        memory_pool[i].is_free = true;
+        memory_pool[i].next = (i < MEMORY_POOL_SIZE - 1) ? &memory_pool[i + 1] : NULL;
+    }
+}
+
+// First Fit Memory Allocation
+void* first_fit_allocate(int size) {
+    for (int i = 0; i < MEMORY_POOL_SIZE; i++) {
+        if (memory_pool[i].is_free && memory_pool[i].size >= size) {
+            memory_pool[i].is_free = false;
+            return &memory_pool[i];
+        }
+    }
+    return NULL;  // No suitable block found
+}
+
+// Best Fit Memory Allocation
+void* best_fit_allocate(int size) {
+    int best_index = -1;
+    int min_diff = MEMORY_POOL_SIZE + 1;  // Initialize with a large value
+
+    for (int i = 0; i < MEMORY_POOL_SIZE; i++) {
+        if (memory_pool[i].is_free && memory_pool[i].size >= size) {
+            int diff = memory_pool[i].size - size;
+            if (diff < min_diff) {
+                min_diff = diff;
+                best_index = i;
+            }
+        }
+    }
+
+    if (best_index != -1) {
+        memory_pool[best_index].is_free = false;
+        return &memory_pool[best_index];
+    }
+    return NULL;
+}
+
+// Worst Fit Memory Allocation
+void* worst_fit_allocate(int size) {
+    int worst_index = -1;
+    int max_size = -1;
+
+    for (int i = 0; i < MEMORY_POOL_SIZE; i++) {
+        if (memory_pool[i].is_free && memory_pool[i].size >= size) {
+            if (memory_pool[i].size > max_size) {
+                max_size = memory_pool[i].size;
+                worst_index = i;
+            }
+        }
+    }
+
+    if (worst_index != -1) {
+        memory_pool[worst_index].is_free = false;
+        return &memory_pool[worst_index];
+    }
+    return NULL;
+}
+
+// Next Fit Memory Allocation
+void* next_fit_allocate(int size) {
+    static int last_index = 0;  // Remember the last allocation index
+
+    for (int i = last_index; i < MEMORY_POOL_SIZE; i++) {
+        if (memory_pool[i].is_free && memory_pool[i].size >= size) {
+            last_index = i + 1;  // Update last index for next allocation
+            memory_pool[i].is_free = false;
+            return &memory_pool[i];
+        }
+    }
+
+    // If no block found in the remaining part, try from the beginning
+    for (int i = 0; i < last_index; i++) {
+        if (memory_pool[i].is_free && memory_pool[i].size >= size) {
+            last_index = i + 1;  // Update last index for next allocation
+            memory_pool[i].is_free = false;
+            return &memory_pool[i];
+        }
+    }
+
+    return NULL;  // No suitable block found
+}
+
+// Free memory block
+void free_block(void *ptr) {
+    Block *block = (Block*)ptr;
+    block->is_free = true;
+}
+
+// Display the memory pool status
+void display_memory_pool() {
+    printf("Memory Pool Status:\n");
+    for (int i = 0; i < MEMORY_POOL_SIZE; i++) {
+        printf("Block %d: Size = %d, %s\n", i, memory_pool[i].size, memory_pool[i].is_free ? "Free" : "Occupied");
+    }
+}
+
+int main() {
+    // Initialize the memory pool with predefined sizes
+    initialize_memory_pool();
+
+    // Allocate memory blocks using different strategies
+    printf("\nFirst Fit Allocation:\n");
+    void *block1 = first_fit_allocate(10);
+    display_memory_pool();
+
+    printf("\nBest Fit Allocation:\n");
+    void *block2 = best_fit_allocate(15);
+    display_memory_pool();
+
+    printf("\nWorst Fit Allocation:\n");
+    void *block3 = worst_fit_allocate(20);
+    display_memory_pool();
+
+    printf("\nNext Fit Allocation:\n");
+    void *block4 = next_fit_allocate(25);
+    display_memory_pool();
+
+    // Free allocated blocks
+    printf("\nFreeing blocks:\n");
+    free_block(block1);
+    free_block(block2);
+    free_block(block3);
+    free_block(block4);
+    display_memory_pool();
+
+    return 0;
+}
